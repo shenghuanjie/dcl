@@ -1,6 +1,6 @@
 from CustomHumanoid.custom_humanoid_env import *
 import time
-from gym import Human
+
 
 def test_toddler():
     env = CustomHumanoidEnv()
@@ -14,15 +14,17 @@ def test_toddler():
 
 
 def test_humanoid():
-    env = CustomHumanoidEnv()
+    import gym
+    env = gym.make("Humanoid-v2")
     env.reset()
     while True:
         action = env.action_space.sample()
         obs, reward, done, _ = env.step(action)
         env.render()
         time.sleep(1e-3)
-        print(action, reward)
+        print(action.shape, reward)
 
 
 if __name__ == '__main__':
-    test_toddler()
+    # test_toddler()
+    test_humanoid()
