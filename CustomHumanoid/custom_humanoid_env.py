@@ -3,7 +3,7 @@ from gym.envs.mujoco import mujoco_env
 from gym import utils
 import os.path as osp
 import os
-from CustomHumanoid.humanoid_builder import humanoid_xml_builder
+from humanoid_builder import humanoid_xml_builder
 
 
 def mass_center(model, data):
@@ -29,26 +29,48 @@ class CustomHumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.head_idx = 0   # temp definition to avoid error in model init
         self.obs_kind = obs_kind
         if template == 'baby':
-            template_kwargs = dict(gut_thickness=1.5,
-                                   butt_thickness=1.4,
+            #adult
+            template_kwargs = dict(gut_thickness=1.0,#1.5
+                                   butt_thickness=0.9, #1.4
                                    lwaist_z=0.85,
-                                   leg_length=0.62,
-                                   leg_thickness=1.4,
-                                   arm_length=0.7,
-                                   arm_thickness=1.7,
-                                   hand_type=2,
-                                   hand_thickness=1.7,
-                                   torso_thickness=1.4,
-                                   span=0.9,
-                                   neck=1.2,
+                                   leg_length=1.20, #0.62
+                                   leg_thickness=1.2, #1.4
+                                   arm_length=1.2, #0.7
+                                   arm_thickness=1.3, #1.7
+                                   hand_type=1, #2
+                                   hand_thickness=1.2, #1.7
+                                   torso_thickness=1.2, #1.4
+                                   span=0.1,
+                                   neck=1.4, #1.2
                                    elbow_scale=3,
                                    shoulder_scale=2,
-                                   ab_scale=4,
-                                   hip_scale=1.6,
+                                   ab_scale=4, #4
+                                   hip_scale=2.0, #1.6
                                    knee_scale=1.6,
-                                   neck_scale=1.5,
-                                   foot_scale=4,
-                                   foot_type=2)
+                                   neck_scale=1.3,#1.5
+                                   foot_scale=10, #4
+                                   foot_type=1) #2
+            # toddler
+            # template_kwargs = dict(gut_thickness=1.5,
+            #                        butt_thickness=1.4,
+            #                        lwaist_z=0.85,
+            #                        leg_length=0.62,
+            #                        leg_thickness=1.4,
+            #                        arm_length=0.7,
+            #                        arm_thickness=1.7,
+            #                        hand_type=1,
+            #                        hand_thickness=1.7,
+            #                        torso_thickness=1.4,
+            #                        span=0.9,
+            #                        neck=1.2,
+            #                        elbow_scale=3,
+            #                        shoulder_scale=2,
+            #                        ab_scale=4,
+            #                        hip_scale=1.6,
+            #                        knee_scale=1.6,
+            #                        neck_scale=1.5,
+            #                        foot_scale=4,
+            #                        foot_type=1)
             for k,v in template_kwargs.items():
                 if not(override and k in kwargs):
                     kwargs[k] = v
@@ -83,13 +105,12 @@ class CustomHumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         quad_impact_cost = .5e-6 * np.square(self.data.cfrc_ext).sum()
         quad_impact_cost = min(quad_impact_cost, 10)
         reward = lin_vel_cost - quad_ctrl_cost - quad_impact_cost + alive_bonus
-        # qpos = self.data.qpos
-        # done = bool((qpos[2] < 1.0) or (qpos[2] > 2.0))
-        done = False
+        qpos = self.data.qpos
+        done = bool((qpos[2] < 1.0) or (qpos[2] > 2.0))
         return self._get_obs(), reward, done, None
 
     def reset_model(self):
-        c = 0.35
+        c = 0.01 #0.35
         self.set_state(
             self.init_qpos + self.np_random.uniform(low=-c, high=c, size=self.model.nq),
             self.init_qvel + self.np_random.uniform(low=-c, high=c, size=self.model.nv,)
