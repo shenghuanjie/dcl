@@ -342,6 +342,7 @@ def build_torso(span=1,
     #free_joint_str = ""
 
     torso_str = "<body name='torso' pos='0 0 1.4'>\n"+free_joint_str+"\
+        <camera name='track' mode='trackcom' pos='0 -4 0' xyaxes='1 0 0 0 0 1'/>\n\
         <geom fromto='"+torso_fromto+"' name='torso1' size='"+torso_size+"' type='capsule'/>\n\
         <geom fromto='"+uwaist_fromto+"' name='uwaist' size='"+uwaist_size+"' type='capsule'/>\n\
     </body>\n"
