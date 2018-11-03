@@ -559,8 +559,10 @@ def train_PG(
     #========================================================================================#
 
     # Make the gym environment
-    env = CustomHumanoidEnv()
-    print("env", env)
+    if env_name == "toddler":
+        env = CustomHumanoidEnv()
+    else:
+        env = gym.make(env_name)
 
     # Set random seeds
     tf.set_random_seed(seed)

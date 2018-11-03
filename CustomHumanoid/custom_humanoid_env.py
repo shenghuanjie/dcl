@@ -105,6 +105,10 @@ class CustomHumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         quad_impact_cost = .5e-6 * np.square(self.data.cfrc_ext).sum()
         quad_impact_cost = min(quad_impact_cost, 10)
         reward = lin_vel_cost - quad_ctrl_cost - quad_impact_cost + alive_bonus
+        # reward = lin_vel_cost + alive_bonus
+        # reward = lin_vel_cost - quad_ctrl_cost + alive_bonus
+        # reward = lin_vel_cost - quad_impact_cost + alive_bonus
+        # reward = lin_vel_cost
         qpos = self.data.qpos
         done = bool((qpos[2] < 1.0) or (qpos[2] > 2.0))
         return self._get_obs(), reward, done, None
