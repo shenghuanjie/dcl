@@ -3,7 +3,7 @@ from gym.envs.mujoco import mujoco_env
 from gym import utils
 import os.path as osp
 import os
-from humanoid_builder import humanoid_xml_builder
+from envs.humanoid_builder import humanoid_xml_builder
 
 
 def mass_center(model, data):

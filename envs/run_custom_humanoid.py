@@ -1,4 +1,4 @@
-from CustomHumanoid.custom_humanoid_env import *
+from envs.custom_humanoid_env import *
 import time
 
 

@@ -6,12 +6,12 @@ Adapted for CS294-112 Fall 2018 by Michael Chang and Soroush Nasiriany
 import numpy as np
 import tensorflow as tf
 import gym
-import logz
+import envs.logz
 import os
 import time
 import inspect
 from multiprocessing import Process
-from custom_humanoid_env import *
+from envs.custom_humanoid_env import *
 
 #============================================================================================#
 # Utilities

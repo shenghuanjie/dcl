@@ -16,7 +16,7 @@ import sac.utils as utils
 from multiprocessing import Process
 
 # import CustomHumanoid
-from CustomHumanoid.custom_humanoid_env import CustomHumanoidEnv
+from envs.custom_humanoid_env import CustomHumanoidEnv
 
 
 def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
