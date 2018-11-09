@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, '..\\dcl')
 
 from model_based.half_cheetah_env import HalfCheetahEnv
-from CustomHumanoid.custom_humanoid_env import CustomHumanoidEnv
+from envs.custom_humanoid_env import CustomHumanoidEnv
 from model_based.logger import logger
 from model_based.model_based_rl import ModelBasedRL
 import model_based.logz as logz
