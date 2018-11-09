@@ -17,6 +17,7 @@ from multiprocessing import Process
 
 # import CustomHumanoid
 from envs.custom_humanoid_env import CustomHumanoidEnv
+from envs.custom_lunar_lander import LunarLanderContinuous
 
 
 def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
@@ -27,7 +28,8 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
         'Humanoid-v2': 0.05,
         'Walker2d-v2': 0.2,
         'Toddler': 0.05,
-        'Adult': 0.05
+        'Adult': 0.05,
+        'LunarLander': 0.1
     }.get(env_name, 0.2)
 
     algorithm_params = {
@@ -76,8 +78,16 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
 
     if env_name == 'Toddler' or env_name == 'Adult':
         env = CustomHumanoidEnv(template=env_name)
+    elif env_name == 'LunarLander':
+        env = LunarLanderContinuous()
     else:
         env = gym.envs.make(env_name)
+
+    # Observation and action sizes
+    ac_dim = env.action_space.n \
+        if isinstance(env.action_space, gym.spaces.Discrete) \
+        else env.action_space.shape[0]
+
     # Set random seeds
     tf.set_random_seed(seed)
     np.random.seed(seed)
@@ -86,7 +96,7 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
     sampler = utils.SimpleSampler(**sampler_params)
     replay_pool = utils.SimpleReplayPool(
         observation_shape=env.observation_space.shape,
-        action_shape=env.action_space.shape,
+        action_shape=(ac_dim, ),
         **replay_pool_params)
 
     q_function = nn.QFunction(name='q_function', **q_function_params)
@@ -99,7 +109,7 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
     target_value_function = nn.ValueFunction(
         name='target_value_function', **value_function_params)
     policy = nn.GaussianPolicy(
-        action_dim=env.action_space.shape[0],
+        action_dim=ac_dim,
         reparameterize=algorithm_params['reparameterize'],
         **policy_params)
 
@@ -161,7 +171,7 @@ def main():
 
     for e in range(args.n_experiments):
         seed = args.seed + 10*e
-        print('Running experiment with seed %d'%seed)
+        print('Running experiment with seed %d' % seed)
 
         """
         def train_func():
@@ -180,7 +190,7 @@ def main():
         processes.append(p)
         # if you comment in the line below, then the loop will block
         # until this process finishes
-        # p.join()
+        p.join()
 
     for p in processes:
         p.join()

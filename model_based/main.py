@@ -1,9 +1,9 @@
+import sys
+sys.path.insert(0, '..\\dcl')
+
 import os
 import argparse
 import time
-
-import sys
-sys.path.insert(0, '..\\dcl')
 
 from model_based.half_cheetah_env import HalfCheetahEnv
 from envs.custom_humanoid_env import CustomHumanoidEnv

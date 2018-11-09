@@ -152,7 +152,10 @@ class Sampler(object):
             def eval(self, _):
                 return np.random.uniform(-1, 1, self._action_dim)
 
-        uniform_exploration_policy = UniformPolicy(env.action_space.shape[0])
+        action_dim = env.action_space.n \
+            if len(env.action_space.shape) == 0 \
+            else env.action_space.shape[0]
+        uniform_exploration_policy = UniformPolicy(action_dim)
         for _ in range(self._prefill_steps):
             self.sample(uniform_exploration_policy)
 

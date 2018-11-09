@@ -76,7 +76,9 @@ class SAC(object):
 
     def _create_placeholders(self, env):
         observation_dim = env.observation_space.shape[0]
-        action_dim = env.action_space.shape[0]
+        action_dim = env.action_space.n \
+            if len(env.action_space.shape) == 0 \
+            else env.action_space.shape[0]
 
         self._observations_ph = tf.placeholder(
             tf.float32,
