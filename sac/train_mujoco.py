@@ -40,7 +40,7 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
         'reparameterize': reparam,
         'tau': 0.01,
         'epoch_length': 1000,
-        'n_epochs': 500,
+        'n_epochs': 100,
         'two_qf': two_qf,
     }
     sampler_params = {
@@ -79,7 +79,7 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
     if env_name == 'Toddler' or env_name == 'Adult':
         env = CustomHumanoidEnv(template=env_name)
     elif env_name == 'LunarLander':
-        env = LunarLanderContinuous()
+        env = LunarLanderContinuous(LEG_SPRING_TORQUE=40)
     else:
         env = gym.envs.make(env_name)
 
@@ -114,7 +114,6 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
         **policy_params)
 
     sampler.initialize(env, policy, replay_pool)
-
     algorithm = SAC(**algorithm_params)
 
     tf_config = tf.ConfigProto(inter_op_parallelism_threads=1, intra_op_parallelism_threads=1)
@@ -190,7 +189,7 @@ def main():
         processes.append(p)
         # if you comment in the line below, then the loop will block
         # until this process finishes
-        p.join()
+        # p.join()
 
     for p in processes:
         p.join()

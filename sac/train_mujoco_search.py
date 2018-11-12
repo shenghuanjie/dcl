@@ -20,25 +20,33 @@ from envs.custom_humanoid_env import CustomHumanoidEnv
 from envs.custom_lunar_lander import LunarLanderContinuous
 from envs.custom_lunar_lander import GLOBAL_PARAMS
 
+lunar_paras = dict(GLOBAL_PARAMS)
+for k, v in GLOBAL_PARAMS.items():
+    if not (isinstance(v, float) or isinstance(v, int)):
+        del lunar_paras[k]
 
-def make_dict_list(paras, nstep, type=float):
-    return_list = []
-    for istep in range(nstep):
-        temp_dict = {}
-        for para in paras:
-            para2 = type(para[2])
-            para1 = type(para[1])
-            if para1 <= para2:
-                temp_dict[para[0]] = type((para2 - para1) / nstep * istep + para1)
-            else:
-                temp_dict[para[0]] = type(para1 - (para1 - para2) / nstep * istep)
-        return_list.append(temp_dict)
-    return return_list
+
+def dict2str(data):
+    out = ''
+    for k, v in data.items():
+        out += k + '{0:.2f}'.format(v) + '-'
+    return out
+
+
+def get_perturbed_paras(paras_dict, max_paras=3, min_fold=0.2, max_fold=5):
+    num_paras = np.random.randint(1, max_paras + 1)
+    key_paras = np.random.choice(list(paras_dict.keys()), num_paras, replace=False)
+    return_dict = dict(paras_dict)
+    changed_paras = dict.fromkeys(key_paras)
+    for para in key_paras:
+        scalar = np.random.rand() * (max_fold - min_fold) + min_fold
+        return_dict[para] = scalar * paras_dict[para]
+        changed_paras[para] = return_dict[para]
+    return return_dict, changed_paras
 
 
 def train_SAC(env_name, exp_name, seed, logdir,
-              two_qf=False, reparam=False, nepochs=50, nsteps=10,
-              paras_dict=({'LEG_AWAY', 10, 110},)):
+              two_qf=False, reparam=False, nepochs=100, paras={}):
     alpha = {
         'Ant-v2': 0.1,
         'HalfCheetah-v2': 0.2,
@@ -81,24 +89,6 @@ def train_SAC(env_name, exp_name, seed, logdir,
         'hidden_layer_sizes': (128, 128),
     }
 
-    if env_name == 'Toddler' or env_name == 'Adult':
-        env = CustomHumanoidEnv(template=env_name)
-    elif env_name == 'LunarLander':
-        env = LunarLanderContinuous()
-    else:
-        env = gym.envs.make(env_name)
-
-    assert(env_name == 'LunarLander')
-    envs = []
-    for istep in range(nsteps):
-        para_dict = paras_dict[istep]
-        for k, v in para_dict.items():
-            this_type = type(GLOBAL_PARAMS[k])
-            para_dict[k] = this_type(v)
-        envs.append(LunarLanderContinuous(**para_dict))
-        # envs.append(LunarLanderContinuous(LEG_AWAY=int(10+istep*10),
-        #                                   LEG_SPRING_TORQUE=int(100-istep*10)))
-
     logz.configure_output_dir(logdir)
     params = {
         'exp_name': exp_name,
@@ -111,6 +101,13 @@ def train_SAC(env_name, exp_name, seed, logdir,
         'policy_params': policy_params
     }
     logz.save_params(params)
+
+    if env_name == 'Toddler' or env_name == 'Adult':
+        env = CustomHumanoidEnv(template=env_name)
+    elif env_name == 'LunarLander':
+        env = LunarLanderContinuous(**paras)
+    else:
+        env = gym.envs.make(env_name)
 
     # Observation and action sizes
     ac_dim = env.action_space.n \
@@ -138,17 +135,15 @@ def train_SAC(env_name, exp_name, seed, logdir,
 
     samplers = []
     replay_pools = []
-    for istep in range(nsteps):
-        env = envs[istep]
-        env.seed(seed)
-        sampler = utils.SimpleSampler(**sampler_params)
-        replay_pool = utils.SimpleReplayPool(
-            observation_shape=env.observation_space.shape,
-            action_shape=(ac_dim,),
-            **replay_pool_params)
-        sampler.initialize(env, policy, replay_pool)
-        samplers.append(sampler)
-        replay_pools.append(replay_pool)
+
+    sampler = utils.SimpleSampler(**sampler_params)
+    replay_pool = utils.SimpleReplayPool(
+        observation_shape=env.observation_space.shape,
+        action_shape=(ac_dim,),
+        **replay_pool_params)
+    sampler.initialize(env, policy, replay_pool)
+    samplers.append(sampler)
+    replay_pools.append(replay_pool)
 
     algorithm = SAC(**algorithm_params)
 
@@ -163,23 +158,18 @@ def train_SAC(env_name, exp_name, seed, logdir,
             value_function=value_function,
             target_value_function=target_value_function)
         # algorithm_params.get('n_epochs', 1000)
-        epoch = 0
-        for istep in range(nsteps):
-            sampler = samplers[istep]
-            replay_pool = replay_pools[istep]
-            for _ in algorithm.train(sampler, n_epochs=algorithm_params.get('n_epochs', 100)):
-                logz.log_tabular('Iteration', epoch)
-                for k, v in algorithm.get_statistics().items():
-                    logz.log_tabular(k, v)
-                for k, v in replay_pool.get_statistics().items():
-                    logz.log_tabular(k, v)
-                for k, v in sampler.get_statistics().items():
-                    logz.log_tabular(k, v)
-                logz.dump_tabular()
-                epoch += 1
+        for epoch in algorithm.train(sampler, n_epochs=algorithm_params.get('n_epochs', 100)):
+            logz.log_tabular('Iteration', epoch)
+            for k, v in algorithm.get_statistics().items():
+                logz.log_tabular(k, v)
+            for k, v in replay_pool.get_statistics().items():
+                logz.log_tabular(k, v)
+            for k, v in sampler.get_statistics().items():
+                logz.log_tabular(k, v)
+            logz.dump_tabular()
 
 
-def train_func(args, logdir, seed, paras_dict):
+def train_func(args, logdir, seed, mutated_paras):
     train_SAC(
         env_name=args.env_name,
         exp_name=args.exp_name,
@@ -188,8 +178,7 @@ def train_func(args, logdir, seed, paras_dict):
         two_qf=args.two_qf,
         reparam=args.reparam,
         nepochs=args.n_epochs,
-        nsteps=args.n_steps,
-        paras_dict=paras_dict
+        paras=mutated_paras
     )
 
 
@@ -201,48 +190,47 @@ def main():
     parser.add_argument('--n_experiments', '-e', type=int, default=1)
     parser.add_argument('--two_qf', action='store_true')
     parser.add_argument('--reparam', action='store_true')
-    parser.add_argument('--n_steps', '-s', type=int, default=10)
-    parser.add_argument('--n_epochs', '-ep', type=int, default=50)
-    parser.add_argument('--paras', type=str, default='LEG_AWAY,10,110')
+    parser.add_argument('--n_epochs', '-ep', type=int, default=100)
     args = parser.parse_args()
-
-    paras = [para.split(',') for para in args.paras.split(';')]
-    paras_dict = make_dict_list(paras, args.n_steps)
 
     data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
-    if not (os.path.exists(data_path)):
-        os.makedirs(data_path)
-    logdir = 'sac_' + args.env_name + '_' + args.exp_name + '_' + time.strftime("%d-%m-%Y_%H-%M-%S")
-    logdir = os.path.join(data_path, logdir)
+    if args.exp_name is None:
+        while True:
+            mutated_paras, changed_paras = get_perturbed_paras(lunar_paras)
+            setattr(args, 'exp_name', dict2str(changed_paras))
 
-    processes = []
+            if not (os.path.exists(data_path)):
+                os.makedirs(data_path)
+            logdir = 'sac_' + args.env_name + '_' + args.exp_name + '_' + time.strftime("%d-%m-%Y_%H-%M-%S")
+            logdir = os.path.join(data_path, logdir)
 
-    for e in range(args.n_experiments):
-        seed = args.seed + 10*e
-        print('Running experiment with seed %d' % seed)
+            processes = []
 
-        """
-        def train_func():
-            train_SAC(
-                env_name=args.env_name,
-                exp_name=args.exp_name,
-                seed=seed,
-                logdir=os.path.join(logdir, '%d' % seed),
-            )
-        """
-        # inputs = {'args': args, 'logdir': logdir, 'seed': seed}
-        # # Awkward hacky process runs, because Tensorflow does not like
-        # # repeatedly calling train_AC in the same thread.
-        p = Process(target=train_func, args=(args, logdir, seed, paras_dict))
-        p.start()
-        processes.append(p)
-        # if you comment in the line below, then the loop will block
-        # until this process finishes
-        # p.join()
+            for e in range(args.n_experiments):
+                seed = args.seed + 10*e
+                print('Running experiment with seed %d' % seed)
 
-    for p in processes:
-        p.join()
+                """
+                def train_func():
+                    train_SAC(
+                        env_name=args.env_name,
+                        exp_name=args.exp_name,
+                        seed=seed,
+                        logdir=os.path.join(logdir, '%d' % seed),
+                    )
+                """
+                # # Awkward hacky process runs, because Tensorflow does not like
+                # # repeatedly calling train_AC in the same thread.
+                p = Process(target=train_func, args=(args, logdir, seed, mutated_paras))
+                p.start()
+                processes.append(p)
+                # if you comment in the line below, then the loop will block
+                # until this process finishes
+                # p.join()
+
+            for p in processes:
+                p.join()
 
 
 if __name__ == '__main__':

@@ -185,7 +185,7 @@ class SAC(object):
                                       trainable_variables)
         ]
 
-    def train(self, sampler, n_epochs=1000):
+    def  train(self, sampler, n_epochs=1000):
         """Return a generator that performs RL training.
 
         Args:

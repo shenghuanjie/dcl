@@ -70,7 +70,8 @@ class ReplayPool:
         self._advance(num_samples)
 
     def random_indices(self, batch_size):
-        if self._size == 0: return []
+        if self._size == 0:
+            return []
         return np.random.randint(0, self._size, batch_size)
 
     def random_batch(self, batch_size, field_name_filter=None):
