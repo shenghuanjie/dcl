@@ -76,7 +76,10 @@ GLOBAL_PARAMS = {
     'VIEWPORT_H': 400,
 
     'THROTTLE_MAG': 0.75,  # discretized 'on' value for thrusters
-    'NOOP': 1  # don't fire main engine, don't steer
+    'NOOP': 1,  # don't fire main engine, don't steer
+
+    # my code
+    'CHUNKS': 11 # range [3, 41]
 }
 
 
@@ -162,6 +165,10 @@ class LunarLander(gym.Env):
     def seed(self, seed=None):
         return self._seed(seed)
 
+    # override
+    def render(self, mode='human', close=False):
+        return self._render(mode, close)
+
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -190,7 +197,7 @@ class LunarLander(gym.Env):
         H = self.parameters['VIEWPORT_H'] / self.parameters['SCALE']
 
         # terrain
-        CHUNKS = 11
+        CHUNKS = self.parameters['CHUNKS'] # 11
         height = self.np_random.uniform(0, H / 2, size=(CHUNKS + 1,))
         chunk_x = [W / (CHUNKS - 1) * i for i in range(CHUNKS)]
 
@@ -199,6 +206,9 @@ class LunarLander(gym.Env):
 
         self.helipad_x1 = chunk_x[helipad_chunk - 1]
         self.helipad_x2 = chunk_x[helipad_chunk + 1]
+
+        print(abs(self.helipad_x1 - self.helipad_x2))
+
         self.helipad_y = H / 4
         height[helipad_chunk - 2] = self.helipad_y
         height[helipad_chunk - 1] = self.helipad_y
