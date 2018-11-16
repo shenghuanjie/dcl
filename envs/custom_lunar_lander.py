@@ -207,8 +207,6 @@ class LunarLander(gym.Env):
         self.helipad_x1 = chunk_x[helipad_chunk - 1]
         self.helipad_x2 = chunk_x[helipad_chunk + 1]
 
-        print(abs(self.helipad_x1 - self.helipad_x2))
-
         self.helipad_y = H / 4
         height[helipad_chunk - 2] = self.helipad_y
         height[helipad_chunk - 1] = self.helipad_y
