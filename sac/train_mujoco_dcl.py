@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, '..\\dcl')
 
 import argparse
@@ -38,7 +39,7 @@ def make_dict_list(paras, nstep, type=float):
 
 def train_SAC(env_name, exp_name, seed, logdir,
               two_qf=False, reparam=False, nepochs=50, nsteps=10,
-              paras_dict=({'LEG_AWAY', 10, 110},)):
+              paras_dict=({'LEG_AWAY', 10, 110},), exp_replay=False):
     alpha = {
         'Ant-v2': 0.1,
         'HalfCheetah-v2': 0.2,
@@ -47,7 +48,7 @@ def train_SAC(env_name, exp_name, seed, logdir,
         'Walker2d-v2': 0.2,
         'Toddler': 0.05,
         'Adult': 0.05,
-        'LunarLander': 0.1
+        'LunarLander': 0.2
     }.get(env_name, 0.2)
 
     algorithm_params = {
@@ -58,7 +59,7 @@ def train_SAC(env_name, exp_name, seed, logdir,
         'reparameterize': reparam,
         'tau': 0.01,
         'epoch_length': 1000,
-        'n_epochs': nepochs, # 500
+        'n_epochs': nepochs,  # 500
         'two_qf': two_qf,
     }
     sampler_params = {
@@ -88,7 +89,7 @@ def train_SAC(env_name, exp_name, seed, logdir,
     else:
         env = gym.envs.make(env_name)
 
-    assert(env_name == 'LunarLander')
+    assert (env_name == 'LunarLander')
     envs = []
     for istep in range(nsteps):
         para_dict = paras_dict[istep]
@@ -138,14 +139,25 @@ def train_SAC(env_name, exp_name, seed, logdir,
 
     samplers = []
     replay_pools = []
+    replay_pool = None
+    sampler = None
     for istep in range(nsteps):
         env = envs[istep]
         env.seed(seed)
-        sampler = utils.SimpleSampler(**sampler_params)
-        replay_pool = utils.SimpleReplayPool(
-            observation_shape=env.observation_space.shape,
-            action_shape=(ac_dim,),
-            **replay_pool_params)
+        if exp_replay:
+            if replay_pool is None:
+                replay_pool = utils.ExperienceReplayPool(
+                    observation_shape=env.observation_space.shape,
+                    action_shape=(ac_dim,),
+                    **replay_pool_params)
+            if sampler is None:
+                sampler = utils.SimpleSampler(**sampler_params)
+        else:
+            replay_pool = utils.SimpleReplayPool(
+                observation_shape=env.observation_space.shape,
+                action_shape=(ac_dim,),
+                **replay_pool_params)
+            sampler = utils.SimpleSampler(**sampler_params)
         sampler.initialize(env, policy, replay_pool)
         samplers.append(sampler)
         replay_pools.append(replay_pool)
@@ -177,6 +189,8 @@ def train_SAC(env_name, exp_name, seed, logdir,
                     logz.log_tabular(k, v)
                 logz.dump_tabular()
                 epoch += 1
+            if exp_replay:
+                replay_pool.deprecate()
 
 
 def train_func(args, logdir, seed, paras_dict):
@@ -189,7 +203,8 @@ def train_func(args, logdir, seed, paras_dict):
         reparam=args.reparam,
         nepochs=args.n_epochs,
         nsteps=args.n_steps,
-        paras_dict=paras_dict
+        paras_dict=paras_dict,
+        exp_replay=args.exp_replay
     )
 
 
@@ -201,6 +216,7 @@ def main():
     parser.add_argument('--n_experiments', '-e', type=int, default=1)
     parser.add_argument('--two_qf', action='store_true')
     parser.add_argument('--reparam', action='store_true')
+    parser.add_argument('--exp_replay', action='store_true')
     parser.add_argument('--n_steps', '-s', type=int, default=10)
     parser.add_argument('--n_epochs', '-ep', type=int, default=50)
     parser.add_argument('--paras', type=str, default='LEG_AWAY,10,110')
@@ -219,7 +235,7 @@ def main():
     processes = []
 
     for e in range(args.n_experiments):
-        seed = args.seed + 10*e
+        seed = args.seed + 10 * e
         print('Running experiment with seed %d' % seed)
 
         """

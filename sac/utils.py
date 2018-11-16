@@ -132,6 +132,47 @@ class SimpleReplayPool(ReplayPool):
         super(SimpleReplayPool, self).__init__(*args, fields=fields, **kwargs)
 
 
+######################
+# MY OWN REPLAY POOL #
+######################
+class ExperienceReplayPool(SimpleReplayPool):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sample_weights = np.zeros(self._max_size)
+        self._decay_iter = 0
+
+    def random_indices(self, batch_size):
+        if self._size == 0:
+            return []
+        prob = self.sample_weights[0:self._size]/sum(self.sample_weights[0:self._size])
+        return np.random.choice(self._size, batch_size, replace=True,
+                                p=prob)
+
+    def random_batch(self, batch_size, field_name_filter=None):
+        random_indices = self.random_indices(batch_size)
+        return super().batch_by_indices(random_indices, field_name_filter)
+
+    def _advance(self, count=1):
+        idx = np.arange(self._pointer,
+                        self._pointer + count) % self._max_size
+        self.sample_weights[idx] = np.ones(count)
+        super()._advance(count)
+
+    def deprecate(self):
+        self.sample_weights = self.sample_weights / np.e
+
+    def dump(self):
+        for field_name, field_attrs in self.fields.items():
+            field_shape = [self._max_size] + list(field_attrs['shape'])
+            initializer = field_attrs.get('initializer', np.zeros)
+            setattr(self, field_name, initializer(field_shape))
+        self._pointer = 0
+        self._size = 0
+        self.sample_weights = np.zeros(self._max_size)
+        self._decay_iter = 0
+
+
 class Sampler(object):
     def __init__(self, max_episode_length, prefill_steps):
         self._max_episode_length = max_episode_length

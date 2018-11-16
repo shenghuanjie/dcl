@@ -18,9 +18,11 @@ from multiprocessing import Process
 # import CustomHumanoid
 from envs.custom_humanoid_env import CustomHumanoidEnv
 from envs.custom_lunar_lander import LunarLanderContinuous
+from envs.custom_lunar_lander import GLOBAL_PARAMS
 
 
-def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
+def train_SAC(env_name, exp_name, seed, logdir,
+              two_qf=False, reparam=False, nepochs=500, para=None):
     alpha = {
         'Ant-v2': 0.1,
         'HalfCheetah-v2': 0.2,
@@ -40,7 +42,7 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
         'reparameterize': reparam,
         'tau': 0.01,
         'epoch_length': 1000,
-        'n_epochs': 100,
+        'n_epochs': nepochs,
         'two_qf': two_qf,
     }
     sampler_params = {
@@ -79,7 +81,11 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
     if env_name == 'Toddler' or env_name == 'Adult':
         env = CustomHumanoidEnv(template=env_name)
     elif env_name == 'LunarLander':
-        env = LunarLanderContinuous(LEG_SPRING_TORQUE=40)
+        if para is None or len(para) != 2:
+            env = LunarLanderContinuous()
+        else:
+            datatype = type(GLOBAL_PARAMS[para[0]])
+            env = LunarLanderContinuous(**{para[0]: datatype(para[1])})
     else:
         env = gym.envs.make(env_name)
 
@@ -138,14 +144,16 @@ def train_SAC(env_name, exp_name, seed, logdir, two_qf=False, reparam=False):
             logz.dump_tabular()
 
 
-def train_func(args, logdir, seed):
+def train_func(args, logdir, seed, para):
     train_SAC(
         env_name=args.env_name,
         exp_name=args.exp_name,
         seed=seed,
         logdir=os.path.join(logdir, '%d' % seed),
         two_qf=args.two_qf,
-        reparam=args.reparam
+        reparam=args.reparam,
+        para=para,
+        nepochs=args.n_epochs
     )
 
 
@@ -157,7 +165,14 @@ def main():
     parser.add_argument('--n_experiments', '-e', type=int, default=1)
     parser.add_argument('--two_qf', action='store_true')
     parser.add_argument('--reparam', action='store_true')
+    parser.add_argument('--n_epochs', '-ep', type=int, default=500)
+    parser.add_argument('--para', type=str, default=None)
     args = parser.parse_args()
+
+    if args.para is None:
+        para = None
+    else:
+        para = args.para.split(',')
 
     data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
@@ -184,7 +199,7 @@ def main():
         # inputs = {'args': args, 'logdir': logdir, 'seed': seed}
         # # Awkward hacky process runs, because Tensorflow does not like
         # # repeatedly calling train_AC in the same thread.
-        p = Process(target=train_func, args=(args, logdir, seed))
+        p = Process(target=train_func, args=(args, logdir, seed, para))
         p.start()
         processes.append(p)
         # if you comment in the line below, then the loop will block
