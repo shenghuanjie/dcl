@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, '..\\dcl')
+
 from envs.custom_humanoid_env import *
 import time
 
