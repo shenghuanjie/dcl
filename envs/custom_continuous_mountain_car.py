@@ -33,13 +33,21 @@ class Continuous_MountainCarEnv(gym.Env):
         self.max_action = 1.0
         self.min_position = -1.2
         self.max_position = 0.6
-        self.max_speed = 0.07
         self.goal_position = 0.45  # was 0.5 in gym, 0.45 in Arnaud de Broissia's version
         self.power = 0.0015
+        self.max_speed = 0.07
+        # my own code
         self.parameters = {'magnitude': 0.45,
                            'weight': 540,
-                           'frequency': 3}
+                           'frequency': 3,
+                           'maxstep': 120,
+                           'goal': 0.5, # [self.min_position, self.max_position]
+                           'max_speed': 0.07,
+                           'power': 0.0015}
+        self.num_step = 0
         self.set_paras(**kwargs)
+        # self.goal_position = self.parameters['goal']# self.max_speed = self.parameters['max_speed']
+        # self.power = self.parameters['power']
 
         self.low_state = np.array([self.min_position, -self.max_speed])
         self.high_state = np.array([self.max_position, self.max_speed])
@@ -55,7 +63,11 @@ class Continuous_MountainCarEnv(gym.Env):
     def set_paras(self, **kwargs):
         for k, v in kwargs.items():
             if k in self.parameters.keys():
-                self.parameters[k] = v
+                datatype = type(self.parameters[k])
+                self.parameters[k] = datatype(v)
+        self.goal_position = self.parameters['goal']  # was 0.5 in gym, 0.45 in Arnaud de Broissia's version
+        self.max_speed = self.parameters['max_speed']
+        self.power = self.parameters['power']
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -82,14 +94,17 @@ class Continuous_MountainCarEnv(gym.Env):
         done = bool(position >= self.goal_position)
 
         reward = 0
+        # self.parameters - self.num_step
+        self.num_step += 1
         if done:
-            reward = 100.0
+            reward += 100.0
         reward -= math.pow(action[0], 2) * 0.1
 
         self.state = np.array([position, velocity])
         return self.state, reward, done, {}
 
-    def reset(self):
+    def reset(self, **kwargs):
+        self.set_paras(**kwargs)
         self.state = np.array([self.np_random.uniform(low=-0.6, high=-0.4), 0])
         return np.array(self.state)
 

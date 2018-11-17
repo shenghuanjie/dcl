@@ -19,6 +19,7 @@ from multiprocessing import Process
 from envs.custom_humanoid_env import CustomHumanoidEnv
 from envs.custom_lunar_lander import LunarLanderContinuous
 from envs.custom_lunar_lander import GLOBAL_PARAMS
+from envs.custom_continuous_mountain_car import Continuous_MountainCarEnv
 
 
 def train_SAC(env_name, exp_name, seed, logdir,
@@ -86,6 +87,11 @@ def train_SAC(env_name, exp_name, seed, logdir,
         else:
             datatype = type(GLOBAL_PARAMS[para[0]])
             env = LunarLanderContinuous(**{para[0]: datatype(para[1])})
+    elif env_name == 'ContinuousMountainCar':
+        if para is None or len(para) != 2:
+            env = Continuous_MountainCarEnv()
+        else:
+            env = Continuous_MountainCarEnv(**{para[0]: para[1]})
     else:
         env = gym.envs.make(env_name)
 
