@@ -127,8 +127,7 @@ class LunarLander(gym.Env):
 
     def __init__(self, **kwargs):
 
-        for ikey in kwargs.keys():
-            self.parameters[ikey] = kwargs[ikey]
+        self.set_paras(**kwargs)
 
         self.metadata = {
             'render.modes': ['human', 'rgb_array'],
@@ -153,9 +152,15 @@ class LunarLander(gym.Env):
 
         self._reset()
 
+    def set_paras(self, **kwargs):
+        for k, v in kwargs.items():
+            if k in self.parameters.keys():
+                datatype = type(self.parameters[k])
+                self.parameters[k] = datatype(v)
+
     # override
-    def reset(self):
-        return self._reset()
+    def reset(self, **kwargs):
+        return self._reset(**kwargs)
 
     # override
     def step(self, action):
@@ -184,7 +189,9 @@ class LunarLander(gym.Env):
         self.world.DestroyBody(self.legs[0])
         self.world.DestroyBody(self.legs[1])
 
-    def _reset(self):
+    def _reset(self, **kwargs):
+        # my own code
+        self.set_paras(**kwargs)
         self.curr_step = 0
 
         self._destroy()
