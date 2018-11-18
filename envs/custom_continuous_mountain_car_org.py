@@ -36,15 +36,14 @@ class Continuous_MountainCarEnv(gym.Env):
         self.goal_position = 0.45  # was 0.5 in gym, 0.45 in Arnaud de Broissia's version
         self.power = 0.0015
         self.max_speed = 0.07
-        self.offset = 0.1
         # my own code
         self.parameters = {'magnitude': 0.45,
-                           'weight': 0.05,
+                           'weight': 540,
                            'frequency': 3,
                            'maxstep': 120,
                            'goal': 0.5, # [self.min_position, self.max_position]
                            'max_speed': 0.07,
-                           'power': 0.05}
+                           'power': 0.0015}
         self.num_step = 0
         self.set_paras(**kwargs)
         # self.goal_position = self.parameters['goal']# self.max_speed = self.parameters['max_speed']
@@ -80,9 +79,8 @@ class Continuous_MountainCarEnv(gym.Env):
         velocity = self.state[1]
         force = min(max(action[0], -1.0), 1.0)
 
-        degree = math.atan(math.cos(self.parameters['frequency'] * position) * self.parameters['frequency'])
-        velocity += (force * self.power - self.parameters['weight'] * math.sin(degree)) * math.cos(degree)
-
+        velocity += force * self.power - math.cos(self.parameters['frequency'] * position) * \
+                    (self.parameters['magnitude'] / self.parameters['weight'])
         if velocity > self.max_speed: velocity = self.max_speed
         if velocity < -self.max_speed: velocity = -self.max_speed
         position += velocity
@@ -91,8 +89,7 @@ class Continuous_MountainCarEnv(gym.Env):
         if position < self.min_position:
             position = self.min_position
         if position == self.min_position and velocity < 0:
-            # velocity = 0
-            velocity = -velocity # bounce off the wall
+            velocity = 0
 
         done = bool(position >= self.goal_position)
 
@@ -116,17 +113,13 @@ class Continuous_MountainCarEnv(gym.Env):
 
     def _height(self, xs):
         return np.sin(self.parameters['frequency'] * xs) * self.parameters['magnitude'] + \
-               self.parameters['magnitude'] + self.offset
+               self.parameters['magnitude'] + 0.1
 
     def render(self, mode='human'):
+        screen_width = 600
+        screen_height = 400
 
         world_width = self.max_position - self.min_position
-        ratio = (2 * self.parameters['magnitude'] + self.offset) / world_width * 2
-        print(ratio)
-
-        screen_width = 600
-        screen_height = int(400 * ratio) + 50
-
         scale = screen_width / world_width
         carwidth = 40
         carheight = 20

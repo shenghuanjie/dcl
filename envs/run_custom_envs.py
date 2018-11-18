@@ -58,14 +58,15 @@ def test_mountain_car():
 
 def test_continuous_mountain_car():
     from envs.custom_continuous_mountain_car import Continuous_MountainCarEnv
-    env = Continuous_MountainCarEnv(magnitude=0.4, frequency=3)
+    env = Continuous_MountainCarEnv(magnitude=0.1)
     env.reset()
     while True:
-        action = env.action_space.sample()
-        # action = [0.9]
+        # action = env.action_space.sample()
+        action = [0.9]
         obs, reward, done, _ = env.step(action)
         env.render()
-        print(reward)
+        print(action)
+        print(obs)
         time.sleep(1e-3)
         if done:
             env.reset()
