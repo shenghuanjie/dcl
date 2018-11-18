@@ -87,7 +87,7 @@ def train_SAC(env_name, exp_name, seed, logdir,
         else:
             datatype = type(GLOBAL_PARAMS[para[0]])
             env = LunarLanderContinuous(**{para[0]: datatype(para[1])})
-    elif env_name == 'ContinuousMountainCar':
+    elif env_name == 'Continuous_MountainCar':
         if para is None or len(para) != 2:
             env = Continuous_MountainCarEnv()
         else:

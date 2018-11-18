@@ -266,3 +266,10 @@ class SimpleSampler(Sampler):
         }
 
         return statistics
+
+
+class ExperienceSampler(SimpleSampler):
+
+    def clear(self):
+        self._max_episode_return = -np.inf
+        self._last_episode_return = 0

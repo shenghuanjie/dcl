@@ -1,32 +1,35 @@
 import sys
-
 sys.path.insert(0, '..\\dcl')
 
+import os
+import time
 import argparse
 import gym
 import sac.logz as logz
 import numpy as np
-import os
 import tensorflow as tf
-import time
 
 import sac.nn as nn
 from sac.sac import SAC
 import sac.utils as utils
 
-from multiprocessing import Process
+from multiprocessing import Process, Manager
 
 # import CustomHumanoid
 from envs.custom_humanoid_env import CustomHumanoidEnv
 from envs.custom_lunar_lander import LunarLanderContinuous
-from envs.custom_lunar_lander import GLOBAL_PARAMS
+from envs.custom_continuous_mountain_car import Continuous_MountainCarEnv
 
 
 def make_dict_list(paras, nstep, type=float):
+    if paras is None:
+        return None
     return_list = []
     for istep in range(nstep):
         temp_dict = {}
         for para in paras:
+            if para is None or len(para) < 2:
+                continue
             para2 = type(para[2])
             para1 = type(para[1])
             if para1 <= para2:
@@ -37,9 +40,21 @@ def make_dict_list(paras, nstep, type=float):
     return return_list
 
 
+def test_run(env, policy):
+    obs = env.reset()
+    while True:
+        action = policy.eval(obs)
+        obs, reward, done, _ = env.step(action)
+        env.render()
+        time.sleep(1e-3)
+        if done:
+            env.reset()
+
+
 def train_SAC(env_name, exp_name, seed, logdir,
               two_qf=False, reparam=False, nepochs=50, nsteps=10,
-              paras_dict=({'LEG_AWAY', 10, 110},), exp_replay=False):
+              paras_dict=({'LEG_AWAY', 10, 110},), exp_replay=False,
+              return_dict=None):
     alpha = {
         'Ant-v2': 0.1,
         'HalfCheetah-v2': 0.2,
@@ -86,19 +101,10 @@ def train_SAC(env_name, exp_name, seed, logdir,
         env = CustomHumanoidEnv(template=env_name)
     elif env_name == 'LunarLander':
         env = LunarLanderContinuous()
+    elif env_name == 'Continuous_MountainCar':
+        env = Continuous_MountainCarEnv()
     else:
         env = gym.envs.make(env_name)
-
-    assert (env_name == 'LunarLander')
-    envs = []
-    for istep in range(nsteps):
-        para_dict = paras_dict[istep]
-        for k, v in para_dict.items():
-            this_type = type(GLOBAL_PARAMS[k])
-            para_dict[k] = this_type(v)
-        envs.append(LunarLanderContinuous(**para_dict))
-        # envs.append(LunarLanderContinuous(LEG_AWAY=int(10+istep*10),
-        #                                   LEG_SPRING_TORQUE=int(100-istep*10)))
 
     logz.configure_output_dir(logdir)
     params = {
@@ -137,30 +143,12 @@ def train_SAC(env_name, exp_name, seed, logdir,
         reparameterize=algorithm_params['reparameterize'],
         **policy_params)
 
-    samplers = []
-    replay_pools = []
-    replay_pool = None
-    sampler = None
-    for istep in range(nsteps):
-        env = envs[istep]
-        env.seed(seed)
-        if exp_replay:
-            if replay_pool is None:
-                replay_pool = utils.ExperienceReplayPool(
-                    observation_shape=env.observation_space.shape,
-                    action_shape=(ac_dim,),
-                    **replay_pool_params)
-            if sampler is None:
-                sampler = utils.SimpleSampler(**sampler_params)
-        else:
-            replay_pool = utils.SimpleReplayPool(
-                observation_shape=env.observation_space.shape,
-                action_shape=(ac_dim,),
-                **replay_pool_params)
-            sampler = utils.SimpleSampler(**sampler_params)
-        sampler.initialize(env, policy, replay_pool)
-        samplers.append(sampler)
-        replay_pools.append(replay_pool)
+    replay_pool = utils.ExperienceReplayPool(
+        observation_shape=env.observation_space.shape,
+        action_shape=(ac_dim,),
+        **replay_pool_params)
+    sampler = utils.ExperienceSampler(**sampler_params)
+    sampler.initialize(env, policy, replay_pool)
 
     algorithm = SAC(**algorithm_params)
 
@@ -177,8 +165,7 @@ def train_SAC(env_name, exp_name, seed, logdir,
         # algorithm_params.get('n_epochs', 1000)
         epoch = 0
         for istep in range(nsteps):
-            sampler = samplers[istep]
-            replay_pool = replay_pools[istep]
+            env.reset(**paras_dict[istep])
             for _ in algorithm.train(sampler, n_epochs=algorithm_params.get('n_epochs', 100)):
                 logz.log_tabular('Iteration', epoch)
                 for k, v in algorithm.get_statistics().items():
@@ -191,9 +178,14 @@ def train_SAC(env_name, exp_name, seed, logdir,
                 epoch += 1
             if exp_replay:
                 replay_pool.deprecate()
+            else:
+                replay_pool.dump()
+            sampler.clear()
+    # return_dict['policy'] = policy
+    # return_dict['env'] = env
 
 
-def train_func(args, logdir, seed, paras_dict):
+def train_func(args, logdir, seed, paras_dict, return_dict):
     train_SAC(
         env_name=args.env_name,
         exp_name=args.exp_name,
@@ -204,14 +196,15 @@ def train_func(args, logdir, seed, paras_dict):
         nepochs=args.n_epochs,
         nsteps=args.n_steps,
         paras_dict=paras_dict,
-        exp_replay=args.exp_replay
+        exp_replay=args.exp_replay,
+        return_dict=return_dict
     )
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--env_name', type=str, default='Toddler')
-    parser.add_argument('--exp_name', type=str, default=None)
+    parser.add_argument('--exp_name', type=str, default='Test')
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--n_experiments', '-e', type=int, default=1)
     parser.add_argument('--two_qf', action='store_true')
@@ -219,21 +212,25 @@ def main():
     parser.add_argument('--exp_replay', action='store_true')
     parser.add_argument('--n_steps', '-s', type=int, default=10)
     parser.add_argument('--n_epochs', '-ep', type=int, default=50)
-    parser.add_argument('--paras', type=str, default='LEG_AWAY,10,110')
+    parser.add_argument('--paras', type=str, default=None)
+    parser.add_argument('--test', action='store_true')
     args = parser.parse_args()
 
-    paras = [para.split(',') for para in args.paras.split(';')]
-    paras_dict = make_dict_list(paras, args.n_steps)
+    if args.paras is not None:
+        paras = [para.split(',') for para in args.paras.split(';')]
+        paras_dict = make_dict_list(paras, args.n_steps)
+    else:
+        paras_dict = None
 
     data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
-
     if not (os.path.exists(data_path)):
         os.makedirs(data_path)
     logdir = 'sac_' + args.env_name + '_' + args.exp_name + '_' + time.strftime("%d-%m-%Y_%H-%M-%S")
     logdir = os.path.join(data_path, logdir)
 
     processes = []
-
+    manager = Manager()
+    return_dict = manager.dict()
     for e in range(args.n_experiments):
         seed = args.seed + 10 * e
         print('Running experiment with seed %d' % seed)
@@ -250,7 +247,7 @@ def main():
         # inputs = {'args': args, 'logdir': logdir, 'seed': seed}
         # # Awkward hacky process runs, because Tensorflow does not like
         # # repeatedly calling train_AC in the same thread.
-        p = Process(target=train_func, args=(args, logdir, seed, paras_dict))
+        p = Process(target=train_func, args=(args, logdir, seed, paras_dict, return_dict))
         p.start()
         processes.append(p)
         # if you comment in the line below, then the loop will block
@@ -259,6 +256,8 @@ def main():
 
     for p in processes:
         p.join()
+
+    # test_run(return_dict['env'], return_dict['policy'])
 
 
 if __name__ == '__main__':
