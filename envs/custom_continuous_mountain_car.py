@@ -44,7 +44,7 @@ class Continuous_MountainCarEnv(gym.Env):
                            'maxstep': 120,
                            'goal': 0.5, # [self.min_position, self.max_position]
                            'max_speed': 0.07,
-                           'power': 0.05}
+                           'power': 0.12}
         self.num_step = 0
         self.set_paras(**kwargs)
         # self.goal_position = self.parameters['goal']# self.max_speed = self.parameters['max_speed']
