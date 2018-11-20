@@ -93,7 +93,7 @@ class GaussianPolicy(Network):
         self._init_graph_network(inputs=inputs, outputs=[samples, log_probs])
         super(GaussianPolicy, self).build(input_shape)
 
-    def _squash_correction(self, raw_actions, eps=1e-8, stable=False):
+    def _squash_correction(self, raw_actions, eps=1e-8, stable=True):
         ### Problem 2.B
         ### YOUR CODE HERE
         # raise NotImplementedError

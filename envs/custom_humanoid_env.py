@@ -25,32 +25,10 @@ def angle_from_quaternion(quat):
 
 
 class CustomHumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
-    def __init__(self, template='baby', override=False, obs_kind=1, **kwargs):
+    def __init__(self, template='Toddler', override=False, obs_kind=1, **kwargs):
         self.head_idx = 0   # temp definition to avoid error in model init
         self.obs_kind = obs_kind
-        if template == 'baby':
-            #adult
-            # template_kwargs = dict(gut_thickness=1.0,#1.5
-            #                        butt_thickness=0.9, #1.4
-            #                        lwaist_z=0.85,
-            #                        leg_length=1.20, #0.62
-            #                        leg_thickness=1.2, #1.4
-            #                        arm_length=1.2, #0.7
-            #                        arm_thickness=1.3, #1.7
-            #                        hand_type=1, #2
-            #                        hand_thickness=1.2, #1.7
-            #                        torso_thickness=1.2, #1.4
-            #                        span=0.1,
-            #                        neck=1.4, #1.2
-            #                        elbow_scale=3,
-            #                        shoulder_scale=2,
-            #                        ab_scale=4, #4
-            #                        hip_scale=2.0, #1.6
-            #                        knee_scale=1.6,
-            #                        neck_scale=1.3,#1.5
-            #                        foot_scale=10, #4
-            #                        foot_type=1) #2
-
+        if template == 'Toddler':
             # toddler
             template_kwargs = dict(gut_thickness=1.5,
                                    butt_thickness=1.4,
@@ -72,9 +50,31 @@ class CustomHumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                                    neck_scale=1.5,
                                    foot_scale=4,
                                    foot_type=1)
-            for k,v in template_kwargs.items():
-                if not(override and k in kwargs):
-                    kwargs[k] = v
+        else:
+            #adult
+            template_kwargs = dict(gut_thickness=1.0,#1.5
+                                   butt_thickness=0.9, #1.4
+                                   lwaist_z=0.85,
+                                   leg_length=1.20, #0.62
+                                   leg_thickness=1.2, #1.4
+                                   arm_length=1.2, #0.7
+                                   arm_thickness=1.3, #1.7
+                                   hand_type=1, #2
+                                   hand_thickness=1.2, #1.7
+                                   torso_thickness=1.2, #1.4
+                                   span=0.1,
+                                   neck=1.4, #1.2
+                                   elbow_scale=3,
+                                   shoulder_scale=2,
+                                   ab_scale=4, #4
+                                   hip_scale=2.0, #1.6
+                                   knee_scale=1.6,
+                                   neck_scale=1.3,#1.5
+                                   foot_scale=10, #4
+                                   foot_type=1) #2
+        for k,v in template_kwargs.items():
+            if not(override and k in kwargs):
+                kwargs[k] = v
         fullpath = humanoid_xml_builder(**kwargs)
         mujoco_env.MujocoEnv.__init__(self, fullpath, 5)
         self.head_idx = np.argmax([name == b'head' for name in self.model.body_names])

@@ -58,15 +58,29 @@ def test_mountain_car():
 
 def test_continuous_mountain_car():
     from envs.custom_continuous_mountain_car import Continuous_MountainCarEnv
-    env = Continuous_MountainCarEnv(magnitude=0.3)
+    env = Continuous_MountainCarEnv(weight=0.001)
     env.reset()
     while True:
         # action = env.action_space.sample()
-        action = [0.3]
+        action = [1.0]
         obs, reward, done, _ = env.step(action)
         env.render()
-        print(action)
-        print(obs)
+        print(obs, action)
+        time.sleep(1e-3)
+        if done:
+            env.reset()
+
+
+def test_continuous_mountain_car_org():
+    from envs.custom_continuous_mountain_car_org import Continuous_MountainCarEnv
+    env = Continuous_MountainCarEnv()
+    env.reset()
+    while True:
+        # action = env.action_space.sample()
+        action = [0.5]
+        obs, reward, done, _ = env.step(action)
+        env.render()
+        print(obs, action)
         time.sleep(1e-3)
         if done:
             env.reset()
@@ -78,11 +92,12 @@ if __name__ == '__main__':
             'humanoid': test_humanoid,
             'lunar_lander': test_custom_lunar_lander,
             'car': test_mountain_car,
-            'car_cont': test_continuous_mountain_car}
+            'car_cont': test_continuous_mountain_car,
+            'car_cont_org': test_continuous_mountain_car_org}
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env_name', '-ev', choices='toddler, humanoid, lunar_lander, car, car_cont',
+    parser.add_argument('--env_name', '-ev', choices='toddler, humanoid, lunar_lander, car, car_cont, car_cont_org',
                         default='car_cont')
     args = parser.parse_args()
 

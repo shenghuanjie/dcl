@@ -173,6 +173,14 @@ class ExperienceReplayPool(SimpleReplayPool):
         self._decay_iter = 0
 
 
+class UniformPolicy(object):
+    def __init__(self, action_dim):
+        self._action_dim = action_dim
+
+    def eval(self, _):
+        return np.random.uniform(-1, 1, self._action_dim)
+
+
 class Sampler(object):
     def __init__(self, max_episode_length, prefill_steps):
         self._max_episode_length = max_episode_length
@@ -186,14 +194,6 @@ class Sampler(object):
         self.env = env
         self.policy = policy
         self.pool = pool
-
-        class UniformPolicy:
-            def __init__(self, action_dim):
-                self._action_dim = action_dim
-
-            def eval(self, _):
-                return np.random.uniform(-1, 1, self._action_dim)
-
         action_dim = env.action_space.n \
             if len(env.action_space.shape) == 0 \
             else env.action_space.shape[0]
@@ -204,7 +204,7 @@ class Sampler(object):
     def set_policy(self, policy):
         self.policy = policy
 
-    def sample(self):
+    def sample(self, policy=None):
         raise NotImplementedError
 
     def random_batch(self, batch_size):
