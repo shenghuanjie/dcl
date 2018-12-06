@@ -19,7 +19,7 @@ from multiprocessing import Process
 from envs.custom_humanoid_env import CustomHumanoidEnv
 from envs.custom_lunar_lander import LunarLanderContinuous
 from envs.custom_lunar_lander import GLOBAL_PARAMS
-from envs.custom_continuous_mountain_car import Continuous_MountainCarEnv
+from envs.custom_continuous_mountain_car_v2 import Continuous_MountainCarEnv
 
 
 def train_SAC(env_name, exp_name, seed, logdir,

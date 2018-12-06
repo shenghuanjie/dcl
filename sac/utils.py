@@ -260,7 +260,7 @@ class SimpleSampler(Sampler):
     def get_statistics(self):
         statistics = {
             'MaxEpReturn': self._max_episode_return,
-            'LastEpReturn': self._last_episode_return,
+            'AverageReturn': self._last_episode_return,
             'Episodes': self._n_episodes,
             'TimestepsSoFar': self._total_samples,
         }

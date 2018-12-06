@@ -105,6 +105,9 @@ def train_SAC(env_name, exp_name, seed, logdir,
     np.random.seed(seed)
     env.seed(seed)
 
+    # Set the environment to current parameters
+    env.reset(**para)
+
     sampler = utils.SimpleSampler(**sampler_params)
     replay_pool = utils.SimpleReplayPool(
         observation_shape=env.observation_space.shape,
@@ -182,6 +185,7 @@ def main():
         para = None
     else:
         para = args.para.split(',')
+        para = {para[0]: para[1]}
 
     data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 

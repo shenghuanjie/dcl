@@ -18,7 +18,7 @@ from multiprocessing import Process
 # import CustomHumanoid
 from envs.custom_humanoid_env import CustomHumanoidEnv
 from envs.custom_lunar_lander import LunarLanderContinuous
-from envs.custom_continuous_mountain_car import Continuous_MountainCarEnv
+from envs.custom_continuous_mountain_car_v2 import Continuous_MountainCarEnv
 
 
 def make_dict_list(paras, nstep, type=float):
@@ -42,6 +42,7 @@ def make_dict_list(paras, nstep, type=float):
 
 def test_run(env, policy, sess, expt_dir='/tmp/cs294-112_project/', max_steps=2000):
     env = gym.wrappers.Monitor(env, os.path.join(expt_dir, "gym"), force=True)
+    env.episode_id += 1
     obs = env.reset()
     with sess.as_default():
         for _ in range(max_steps):

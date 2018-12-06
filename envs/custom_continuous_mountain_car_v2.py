@@ -47,6 +47,8 @@ class Continuous_MountainCarEnv(gym.Env):
                            'goal': 0.5, # [self.min_position, self.max_position]
                            'max_speed': 0.07,
                            'power': 0.0015}
+        # The mountain car cannot reach the goal directly if the weight is greater than 0.0017
+        # self.weight_scalar = 1e-4
         self.num_step = 0
         self.set_paras(**kwargs)
         # self.goal_position = self.parameters['goal']# self.max_speed = self.parameters['max_speed']
@@ -77,7 +79,6 @@ class Continuous_MountainCarEnv(gym.Env):
         return [seed]
 
     def step(self, action):
-
         position = self.state[0]
         velocity = self.state[1]
         force = min(max(action[0], -1.0), 1.0)
