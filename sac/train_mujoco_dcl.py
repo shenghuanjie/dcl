@@ -189,7 +189,7 @@ def train_func(args, logdir, seed, paras_dict):
         env_name=args.env_name,
         exp_name=args.exp_name,
         seed=seed,
-        logdir=os.path.join(logdir, '%d' % seed),
+        logdir=logdir,
         two_qf=args.two_qf,
         reparam=args.reparam,
         nepochs=args.n_epochs,
@@ -242,6 +242,7 @@ def main():
     for e in range(args.n_experiments):
         seed = args.seed + 10 * e
         print('Running experiment with seed %d' % seed)
+        logdir_seed = os.path.join(logdir, '%d' % seed)
 
         """
         def train_func():
@@ -255,9 +256,9 @@ def main():
         # # Awkward hacky process runs, because Tensorflow does not like
         # # repeatedly calling train_AC in the same thread.
         if args.test or args.save:
-            test_or_save(args, logdir, seed, paras_dict)
+            test_or_save(args, logdir_seed, seed, paras_dict)
         else:
-            p = Process(target=train_func, args=(args, logdir, seed, paras_dict))
+            p = Process(target=train_func, args=(args, logdir_seed, seed, paras_dict))
             p.start()
             processes.append(p)
             # if you comment in the line below, then the loop will block
