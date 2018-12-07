@@ -103,7 +103,7 @@ def train_SAC(env_name, exp_name, seed, logdir,
     if env_name == 'Toddler' or env_name == 'Adult':
         env = CustomHumanoidEnv(template=env_name)
     else:
-        env = gym.envs.make(env_name)
+        env = gym.make(env_name)
 
     logz.configure_output_dir(logdir)
     params = {
@@ -199,6 +199,17 @@ def train_func(args, logdir, seed, paras_dict):
     )
 
 
+def test_or_save(args, logdir, seed, para_dict):
+    env, policy, sess = train_func(args, logdir, seed, para_dict)
+    if not (os.path.exists(logdir)):
+        os.makedirs(logdir)
+    if args.test:
+        test_run(env, policy, sess, expt_dir=logdir)
+    if args.save:
+        with sess.as_default():
+            policy.save(os.path.join(logdir, 'policy.h5'))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--env_name', type=str, default='CustomContinuousMountain-v2')
@@ -212,6 +223,7 @@ def main():
     parser.add_argument('--n_epochs', '-ep', type=int, default=50)
     parser.add_argument('--paras', type=str, default=None)
     parser.add_argument('--test', action='store_true')
+    parser.add_argument('--save', action='store_true')
     args = parser.parse_args()
 
     if args.paras is not None:
@@ -242,9 +254,8 @@ def main():
         """
         # # Awkward hacky process runs, because Tensorflow does not like
         # # repeatedly calling train_AC in the same thread.
-        if args.test:
-            env, policy, sess = train_func(args, logdir, seed, paras_dict)
-            test_run(env, policy, sess)
+        if args.test or args.save:
+            test_or_save(args, logdir, seed, paras_dict)
         else:
             p = Process(target=train_func, args=(args, logdir, seed, paras_dict))
             p.start()

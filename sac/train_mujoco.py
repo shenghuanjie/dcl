@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, '..\\dcl')
 
 import argparse
@@ -17,9 +18,19 @@ from multiprocessing import Process
 
 # import CustomHumanoid
 from envs.custom_humanoid_env import CustomHumanoidEnv
-from envs.custom_lunar_lander import LunarLanderContinuous
-from envs.custom_lunar_lander import GLOBAL_PARAMS
-from envs.custom_continuous_mountain_car_v2 import Continuous_MountainCarEnv
+
+
+def test_run(env, policy, sess, expt_dir='./tmp/', max_steps=2000):
+    env = gym.wrappers.Monitor(env, expt_dir, force=True)
+    obs = env.reset()
+    with sess.as_default():
+        for _ in range(max_steps):
+            action = policy.eval(obs)
+            obs, reward, done, _ = env.step(action)
+            env.render()
+            time.sleep(1e-3)
+            if done:
+                break
 
 
 def train_SAC(env_name, exp_name, seed, logdir,
@@ -81,17 +92,6 @@ def train_SAC(env_name, exp_name, seed, logdir,
 
     if env_name == 'Toddler' or env_name == 'Adult':
         env = CustomHumanoidEnv(template=env_name)
-    elif env_name == 'LunarLander':
-        if para is None or len(para) != 2:
-            env = LunarLanderContinuous()
-        else:
-            datatype = type(GLOBAL_PARAMS[para[0]])
-            env = LunarLanderContinuous(**{para[0]: datatype(para[1])})
-    elif env_name == 'Continuous_MountainCar':
-        if para is None or len(para) != 2:
-            env = Continuous_MountainCarEnv()
-        else:
-            env = Continuous_MountainCarEnv(**{para[0]: para[1]})
     else:
         env = gym.envs.make(env_name)
 
@@ -105,10 +105,14 @@ def train_SAC(env_name, exp_name, seed, logdir,
     np.random.seed(seed)
     env.seed(seed)
 
+    # Set the environment to current parameters
+    if para is not None:
+        env.reset(**para)
+
     sampler = utils.SimpleSampler(**sampler_params)
     replay_pool = utils.SimpleReplayPool(
         observation_shape=env.observation_space.shape,
-        action_shape=(ac_dim, ),
+        action_shape=(ac_dim,),
         **replay_pool_params)
 
     q_function = nn.QFunction(name='q_function', **q_function_params)
@@ -130,7 +134,8 @@ def train_SAC(env_name, exp_name, seed, logdir,
 
     tf_config = tf.ConfigProto(inter_op_parallelism_threads=1, intra_op_parallelism_threads=1)
     tf_config.gpu_options.allow_growth = True  # may need if using GPU
-    with tf.Session(config=tf_config):
+    sess = tf.Session(config=tf_config)
+    with sess.as_default():
         algorithm.build(
             env=env,
             policy=policy,
@@ -148,19 +153,31 @@ def train_SAC(env_name, exp_name, seed, logdir,
             for k, v in sampler.get_statistics().items():
                 logz.log_tabular(k, v)
             logz.dump_tabular()
+    return env, policy, sess
 
 
 def train_func(args, logdir, seed, para):
-    train_SAC(
+    return train_SAC(
         env_name=args.env_name,
         exp_name=args.exp_name,
         seed=seed,
-        logdir=os.path.join(logdir, '%d' % seed),
+        logdir=logdir,
         two_qf=args.two_qf,
         reparam=args.reparam,
         para=para,
         nepochs=args.n_epochs
     )
+
+
+def test_or_save(args, logdir, seed, para):
+    env, policy, sess = train_func(args, logdir, seed, para)
+    if not (os.path.exists(logdir)):
+        os.makedirs(logdir)
+    if args.test:
+        test_run(env, policy, sess, expt_dir=logdir)
+    if args.save:
+        with sess.as_default():
+            policy.save(os.path.join(logdir, 'policy.h5'))
 
 
 def main():
@@ -173,12 +190,15 @@ def main():
     parser.add_argument('--reparam', action='store_true')
     parser.add_argument('--n_epochs', '-ep', type=int, default=500)
     parser.add_argument('--para', type=str, default=None)
+    parser.add_argument('--test', action='store_true')
+    parser.add_argument('--save', action='store_true')
     args = parser.parse_args()
 
     if args.para is None:
         para = None
     else:
         para = args.para.split(',')
+        para = {para[0]: para[1]}
 
     data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
@@ -190,9 +210,9 @@ def main():
     processes = []
 
     for e in range(args.n_experiments):
-        seed = args.seed + 10*e
+        seed = args.seed + 10 * e
         print('Running experiment with seed %d' % seed)
-
+        logdir = os.path.join(logdir, '%d' % seed)
         """
         def train_func():
             train_SAC(
@@ -202,15 +222,17 @@ def main():
                 logdir=os.path.join(logdir, '%d' % seed),
             )
         """
-        # inputs = {'args': args, 'logdir': logdir, 'seed': seed}
-        # # Awkward hacky process runs, because Tensorflow does not like
-        # # repeatedly calling train_AC in the same thread.
-        p = Process(target=train_func, args=(args, logdir, seed, para))
-        p.start()
-        processes.append(p)
-        # if you comment in the line below, then the loop will block
-        # until this process finishes
-        # p.join()
+        if args.test or args.save:
+            test_or_save(args, logdir, seed, para)
+        else:
+            # # Awkward hacky process runs, because Tensorflow does not like
+            # # repeatedly calling train_AC in the same thread.
+            p = Process(target=train_func, args=(args, logdir, seed, para))
+            p.start()
+            processes.append(p)
+            # if you comment in the line below, then the loop will block
+            # until this process finishes
+            # p.join()
 
     for p in processes:
         p.join()

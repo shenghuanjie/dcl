@@ -211,26 +211,6 @@ class SAC(object):
                 tf.get_default_session().run(self._training_ops, feed_dict)
                 tf.get_default_session().run(self._target_update_ops)
 
-                # debug
-                """
-                policy_loss, value_loss, q_loss = tf.get_default_session().run([self.debug_policy_loss,
-                                                            self.debug_value_loss,
-                                                            self.debug_q_loss], feed_dict)
-                targets, baseline, log_pis, q_values = tf.get_default_session().run([self.debug_policy_targets,
-                                                                                    self.debug_policy_baseline,
-                                                                                    self.debug_policy_log_pis,
-                                                                                    self.debug_policy_q_values]
-                                                                                    , feed_dict)
-                print('policy_loss: ', policy_loss)
-                print('value_loss: ', value_loss)
-                print('q_loss: ', q_loss)
-                print('-----------------------------------')
-                print('targets: ', targets)
-                print('baseline: ', baseline)
-                print('log_pis: ', log_pis)
-                print('q_values: ', q_values)
-                """
-
             yield epoch
 
     def get_statistics(self):

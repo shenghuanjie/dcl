@@ -1,9 +1,10 @@
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
-from tensorflow_probability import distributions
 from tensorflow.python import keras
 from tensorflow.python.keras.engine.network import Network
+from tensorflow_probability import distributions
+from tensorflow.python.keras.engine.base_layer import Layer
+import tensorflow.keras.backend as K
 
 
 class QFunction(Network):
@@ -43,6 +44,57 @@ class ValueFunction(Network):
         super(ValueFunction, self).build(input_shape)
 
 
+class DistributionLayer(Layer):
+
+    def __init__(self, reparameterize=True, **kwargs):
+        super().__init__(**kwargs)
+        self._reparameterize = reparameterize
+
+    def create_distribution_layer(self, mean_and_log_std):
+        mean, log_std = tf.split(
+            mean_and_log_std, num_or_size_splits=2, axis=1)
+        log_std = tf.clip_by_value(log_std, -20., 2.)
+
+        distribution = distributions.MultivariateNormalDiag(
+            loc=mean,
+            scale_diag=tf.exp(log_std))
+
+        raw_actions = distribution.sample()
+        if not self._reparameterize:
+            ### Problem 1.3.A
+            ### YOUR CODE HERE
+            # raise NotImplementedError
+            raw_actions = tf.stop_gradient(raw_actions)
+        log_probs = distribution.log_prob(raw_actions)
+        log_probs -= self._squash_correction(raw_actions)
+
+        # actions = None
+        ### Problem 2.A
+        ### YOUR CODE HERE
+        # raise NotImplementedError
+        actions = tf.tanh(raw_actions)
+
+        return actions, log_probs
+
+    def _squash_correction(self, raw_actions, eps=1e-8, stable=True):
+        ### Problem 2.B
+        ### YOUR CODE HERE
+        # raise NotImplementedError
+        if stable:
+            return tf.reduce_sum(tf.log(4.0) -
+                                 2.0 * (tf.nn.softplus(2.0 * raw_actions) - raw_actions),
+                                 axis=1)
+        else:
+            return tf.reduce_sum(tf.log(1 - tf.square(tf.tanh(raw_actions)) + eps), axis=1)
+
+    def call(self, *args):
+        # calculations with inputTensor and the weights you defined in "build"
+        # inputTensor may be a single tensor or a list of tensors
+
+        # output can also be a single tensor or a list of tensors
+        return self.create_distribution_layer(*args)
+
+
 class GaussianPolicy(Network):
     def __init__(self, action_dim, hidden_layer_sizes, reparameterize, **kwargs):
         super(GaussianPolicy, self).__init__(**kwargs)
@@ -61,48 +113,11 @@ class GaussianPolicy(Network):
         mean_and_log_std = layers.Dense(
             self._action_dim * 2, activation=None)(x)
 
-        def create_distribution_layer(mean_and_log_std):
-            mean, log_std = tf.split(
-                mean_and_log_std, num_or_size_splits=2, axis=1)
-            log_std = tf.clip_by_value(log_std, -20., 2.)
-
-            distribution = distributions.MultivariateNormalDiag(
-                loc=mean,
-                scale_diag=tf.exp(log_std))
-
-            raw_actions = distribution.sample()
-            if not self._reparameterize:
-                ### Problem 1.3.A
-                ### YOUR CODE HERE
-                # raise NotImplementedError
-                raw_actions = tf.stop_gradient(raw_actions)
-            log_probs = distribution.log_prob(raw_actions)
-            log_probs -= self._squash_correction(raw_actions)
-
-            # actions = None
-            ### Problem 2.A
-            ### YOUR CODE HERE
-            # raise NotImplementedError
-            actions = tf.tanh(raw_actions)
-
-            return actions, log_probs
-
-        samples, log_probs = layers.Lambda(create_distribution_layer)(
-            mean_and_log_std)
+        samples, log_probs = DistributionLayer(reparameterize=self._reparameterize)\
+            (mean_and_log_std)
 
         self._init_graph_network(inputs=inputs, outputs=[samples, log_probs])
         super(GaussianPolicy, self).build(input_shape)
-
-    def _squash_correction(self, raw_actions, eps=1e-8, stable=True):
-        ### Problem 2.B
-        ### YOUR CODE HERE
-        # raise NotImplementedError
-        if stable:
-            return tf.reduce_sum(tf.log(4.0) -
-                                 2.0 * (tf.nn.softplus(2.0 * raw_actions) - raw_actions),
-                                 axis=1)
-        else:
-            return tf.reduce_sum(tf.log(1 - tf.square(tf.tanh(raw_actions)) + eps), axis=1)
 
     def eval(self, observation):
         assert self.built and observation.ndim == 1
@@ -112,3 +127,8 @@ class GaussianPolicy(Network):
 
         action, = self._f([observation[None]])
         return action.flatten()
+
+    # def get_config(self):
+    #     config = super().get_config()
+    #     config['distribution_layer'] = self.create_distribution_layer # say self. _localization_net  if you store the argument in __init__
+    #     return config
