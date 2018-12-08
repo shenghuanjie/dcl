@@ -142,6 +142,17 @@ def test_continuous_mountain_car_v3():
         if done:
             env.reset()
 
+def test_arm3d_disc_env():
+    from rllab_curriculum.curriculum.envs.arm3d.arm3d_disc_env import Arm3dDiscEnv
+    env = Arm3dDiscEnv()
+    env.reset()
+    while True:
+        action = env.action_space.sample()
+        obs, reward, done, _ = env.step(action)
+        env.render()
+        time.sleep(1e-3)
+        if done:
+            env.reset()
 
 if __name__ == '__main__':
     envs = {'toddler': test_toddler,
@@ -152,13 +163,15 @@ if __name__ == '__main__':
             'car_cont_v1': test_continuous_mountain_car_org,
             'car_cont_v0': test_continuous_mountain_car_openai,
             'car_cont_v3': test_continuous_mountain_car_v3,
-            'car_cont_weights_test': test_continuous_mountain_car_weights}
+            'car_cont_weights_test': test_continuous_mountain_car_weights,
+            'arm3d_disc_env':test_arm3d_disc_env}
 
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--env_name', '-ev', choices='toddler, humanoid, lunar_lander, car, '
                                                      'car_cont_v0, car_cont_v1, car_cont_v2, '
-                                                     'car_cont_v3, car_cont_weights_test',
+                                                     'car_cont_v3, car_cont_weights_test'
+                                                     'arm3d_disc_env',
                         default='car_cont_v3')
     args = parser.parse_args()
     envs[args.env_name]()
