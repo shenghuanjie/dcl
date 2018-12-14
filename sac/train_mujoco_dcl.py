@@ -174,6 +174,8 @@ def train_SAC(env_name, exp_name, seed, logdir,
                     logz.log_tabular(k, v)
                 for k, v in sampler.get_statistics().items():
                     logz.log_tabular(k, v)
+                for k, v in paras_dict[istep].items():
+                    logz.log_tabular(k, v)
                 logz.dump_tabular()
                 epoch += 1
             if exp_replay:
@@ -226,11 +228,9 @@ def main():
     parser.add_argument('--save', action='store_true')
     args = parser.parse_args()
 
-    if args.paras is not None:
-        paras = [para.split(',') for para in args.paras.split(';')]
-        paras_dict = make_dict_list(paras, args.n_steps)
-    else:
-        paras_dict = None
+    assert args.paras is not None
+    paras = [para.split(',') for para in args.paras.split(';')]
+    paras_dict = make_dict_list(paras, args.n_steps)
 
     data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
     if not (os.path.exists(data_path)):

@@ -161,5 +161,9 @@ if __name__ == '__main__':
                                                      'car_cont_v3, car_cont_weights_test',
                         default='car_cont_v3')
     args = parser.parse_args()
+
+    import gym
+    print(str(gym.envs.registry.all()).replace(',', ',\n'))
+
     envs[args.env_name]()
 
