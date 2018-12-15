@@ -132,7 +132,7 @@ def test_continuous_mountain_car_weights():
 def test_continuous_mountain_car_v3():
     import gym
     env = gym.make('CustomContinuousMountain-v3')
-    env.reset()
+    env.reset(weight=0.0023)
     while True:
         # action = env.action_space.sample()
         action = [1.0]
@@ -141,6 +141,7 @@ def test_continuous_mountain_car_v3():
         time.sleep(1e-3)
         if done:
             env.reset()
+
 
 def test_arm3d_disc_env():
     from rllab_curriculum.curriculum.envs.arm3d.arm3d_disc_env import Arm3dDiscEnv
@@ -153,6 +154,7 @@ def test_arm3d_disc_env():
         time.sleep(1e-3)
         if done:
             env.reset()
+
 
 if __name__ == '__main__':
     envs = {'toddler': test_toddler,

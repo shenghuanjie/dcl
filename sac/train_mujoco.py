@@ -171,8 +171,7 @@ def train_func(args, logdir, seed, para):
 
 def test_or_save(args, logdir, seed, para):
     env, policy, sess = train_func(args, logdir, seed, para)
-    if not (os.path.exists(logdir)):
-        os.makedirs(logdir)
+    os.makedirs(logdir, exist_ok=True)
     if args.test:
         test_run(env, policy, sess, expt_dir=logdir)
     if args.save:
@@ -213,15 +212,7 @@ def main():
         seed = args.seed + 10 * e
         print('Running experiment with seed %d' % seed)
         logdir_seed = os.path.join(logdir, '%d' % seed)
-        """
-        def train_func():
-            train_SAC(
-                env_name=args.env_name,
-                exp_name=args.exp_name,
-                seed=seed,
-                logdir=os.path.join(logdir, '%d' % seed),
-            )
-        """
+
         if args.test or args.save:
             test_or_save(args, logdir_seed, seed, para)
         else:
