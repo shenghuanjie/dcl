@@ -58,7 +58,7 @@ def test_mountain_car():
 
 def test_continuous_mountain_car():
     from envs.custom_continuous_mountain_car_v2 import Continuous_MountainCarEnv
-    env = Continuous_MountainCarEnv(weight=0.001)
+    env = Continuous_MountainCarEnv(weight=0.0024)
     env.reset()
     while True:
         # action = env.action_space.sample()
@@ -132,7 +132,7 @@ def test_continuous_mountain_car_weights():
 def test_continuous_mountain_car_v3():
     import gym
     env = gym.make('CustomContinuousMountain-v3')
-    env.reset(weight=0.0023)
+    env.reset(weight=0.0024)
     while True:
         # action = env.action_space.sample()
         action = [1.0]
@@ -176,9 +176,6 @@ if __name__ == '__main__':
                                                      'arm3d_disc_env',
                         default='car_cont_v3')
     args = parser.parse_args()
-
-    import gym
-    print(str(gym.envs.registry.all()).replace(',', ',\n'))
 
     envs[args.env_name]()
 
