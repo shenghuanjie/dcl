@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, '..\\dcl')
+sys.path.insert(0, '../dcl')
+sys.path.insert(0, './rllab_curriculum')
 
 from envs.custom_humanoid_env import *
 import time
