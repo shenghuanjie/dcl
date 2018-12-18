@@ -1,0 +1,126 @@
+<mujoco model="arm3d">
+
+    <compiler angle="radian" coordinate="local" inertiafromgeom="true" />
+    <option gravity="0 0 0" integrator="Euler" iterations="20" timestep="0.01" />
+    <default>
+        <joint armature="0.04" damping="1" limited="true" />
+        <geom conaffinity="0" condim="1" contype="0" friction=".5 .1 .1" margin="0.002" />
+    </default>
+    <visual>
+        <headlight ambient="1 1 1" />
+    </visual>
+    <asset>
+        <material name="non-reflect" shininess="0" specular="0" />
+    </asset>
+
+    <asset>
+        <texture builtin="checker" height="256" rgb1="1 1 1" rgb2="1 1 1" type="skybox" width="256" />
+    </asset>
+
+    <worldbody>
+        <body name="r_shoulder_pan_link" pos="0 -0.188 0">
+            <geom name="e1" pos="-0.06 0.05 0.2" rgba="0.6 0.6 0.6 1" size="0.05" type="sphere" />
+            <geom name="e2" pos=" 0.06 0.05 0.2" rgba="0.6 0.6 0.6 1" size="0.05" type="sphere" />
+            <geom name="e1p" pos="-0.06 0.09 0.2" rgba="0.1 0.1 0.1 1" size="0.03" type="sphere" />
+            <geom name="e2p" pos=" 0.06 0.09 0.2" rgba="0.1 0.1 0.1 1" size="0.03" type="sphere" />
+            <geom conaffinity="1" contype="1" fromto="0 0 -0.4 0 0 0.2" name="sp" rgba="0.25 0.25 0.25 1" size="0.1" type="capsule" />
+            <joint axis="0 0 1" damping="10.0" name="r_shoulder_pan_joint" pos="0 0 0" range="-2.2854 1.714602" type="hinge" />
+
+            <body name="r_shoulder_lift_link" pos="0.1 0 0">
+                <geom conaffinity="1" contype="1" fromto="0 -0.1 0 0 0.1 0" name="sl" rgba="0.25 0.25 0.25 1" size="0.1" type="capsule" />
+                <joint axis="0 1 0" damping="10.0" name="r_shoulder_lift_joint" pos="0 0 0" range="-0.5236 1.3963" type="hinge" />
+
+                <body name="r_upper_arm_roll_link" pos="0 0 0">
+                    <geom fromto="-0.1 0 0 0.1 0 0" name="uar" rgba="0.25 0.25 0.25 1" size="0.02" type="capsule" />
+                    <joint axis="1 0 0" damping="0.1" name="r_upper_arm_roll_joint" pos="0 0 0" range="-3.9 0.8" type="hinge" />
+
+                    <body name="r_upper_arm_link" pos="0 0 0">
+                        <geom conaffinity="1" contype="1" fromto="0 0 0 0.4 0 0" name="ua" rgba="0.25 0.25 0.25 1" size="0.06" type="capsule" />
+
+                        <body name="r_elbow_flex_link" pos="0.4 0 0">
+                            <geom fromto="0 -0.02 0 0.0 0.02 0" name="ef" rgba="0.25 0.25 0.25 1" size="0.06" type="capsule" />
+                            <joint axis="0 1 0" damping="1.0" name="r_elbow_flex_joint" pos="0 0 0" range="-2.3213 0" type="hinge" />
+
+                            <body name="r_forearm_roll_link" pos="0 0 0">
+                                <geom fromto="-0.1 0 0 0.1 0 0" name="fr" rgba="0.25 0.25 0.25 1" size="0.02" type="capsule" />
+                                <joint axis="1 0 0" damping=".1" name="r_forearm_roll_joint" pos="0 0 0" range="-3.15 3.15" type="hinge" />
+
+                                <body name="r_forearm_link" pos="0 0 0">
+                                    <geom conaffinity="1" contype="1" fromto="0 0 0 0.321 0 0" name="fa" rgba="0.25 0.25 0.25 1" size="0.05" type="capsule" />
+
+                                    <body name="r_wrist_flex_link" pos="0.321 0 0">
+                                        <geom fromto="0 -0.02 0 0 0.02 0" name="wf" rgba="0.25 0.25 0.25 1" size="0.01" type="capsule" />
+                                        <joint axis="0 1 0" damping=".1" name="r_wrist_flex_joint" pos="0 0 0" range="-2.094 0" type="hinge" />
+
+                                        <body name="r_wrist_roll_link" pos="0 0 0">
+                                            <geom fromto="-0.02 0 0 0.02 0 0" name="wr" rgba="0.25 0.25 0.25 1" size="0.01" type="capsule" />
+                                            <joint axis="1 0 0" damping="0.1" name="r_wrist_roll_joint" pos="0 0 0" range="-3.15 3.15" type="hinge" />
+
+                                            <body name="r_gripper_palm_link" pos="0 0 0">
+                                                <geom fromto="0.05 0 -0.02 0.05 0 0.02" name="pl" rgba="0.25 0.25 0.25 1" size="0.05" type="capsule" />
+
+                                                <body name="r_gripper_tool_frame" pos="0.18 0 0">
+                                                    <site name="disc_center" pos="0 0 0" size="0.01" />
+
+                                                    
+
+                                                    <body name="tool" pos="0 0 0">
+                                                        <geom conaffinity="1" contype="1" name="wc1" pos="0.0915 0 0" rgba="0.2 0.2 0.8 1" size="0.0585 0.15 0.025" type="box" />
+                                                        <geom conaffinity="1" contype="1" name="wc2" pos="-0.0915 0 0" rgba="0.2 0.2 0.8 1" size="0.0585 0.15 0.025" type="box" />
+                                                        <geom conaffinity="1" contype="1" name="wc3" pos="0.0 0.0915 0" rgba="0.2 0.2 0.8 1" size="0.033 0.0585 0.025" type="box" />
+                                                        <geom conaffinity="1" contype="1" name="wc4" pos="0.0 -0.0915 0" rgba="0.2 0.2 0.8 1" size="0.033 0.0585 0.025" type="box" />
+                                                    </body>
+                                                </body>
+                                            </body>
+                                        </body>
+                                    </body>
+                                </body>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+
+        
+            
+        
+
+        <body name="w2" pos="0 0.3 -0.45">
+            
+            <site name="peg_bottom" pos="0 0 0.05" size="0.01" />
+
+            
+            <geom conaffinity="1" contype="1" name="w2" rgba="0.8 0.2 0.8 1" size="0.4 0.4 0.025" type="box" />
+
+            
+            
+                
+
+            
+            <body name="peg" pos="0.0 0.0 0.0">
+                
+                <geom conaffinity="1" contype="1" density="2000000000" fromto="0 0 0 0 0 0.3" name="peg_geom" rgba="0.545098 0.270588 0.07450987 1" size="0.028" type="cylinder" />
+                <joint axis="1 0 0" damping="0.5" name="slider1" pos="0 0 0" range="-0.2 0.2" type="slide" />
+                <joint axis="0 1 0" damping="0.5" name="slider2" pos="0 0 0" range="-0.2 0.2" type="slide" />
+
+            </body>
+        </body>
+
+        
+            
+        
+
+    </worldbody>
+
+    <actuator>
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="r_shoulder_pan_joint" />
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="r_shoulder_lift_joint" />
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="r_upper_arm_roll_joint" />
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="r_elbow_flex_joint" />
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="r_forearm_roll_joint" />
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="r_wrist_flex_joint" />
+        <motor ctrllimited="true" ctrlrange="-1.0 1.0" joint="r_wrist_roll_joint" />
+    </actuator>
+
+</mujoco>
