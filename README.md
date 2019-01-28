@@ -2,7 +2,7 @@
 
 This codebase contains the code for [Curriculum Learning on Dynamics](https://drive.google.com/file/d/1a1zLze6m8qX1TtGIMY_1-KHqCfHGW3cY/view?usp=sharing).
 
-[Final Report](https://drive.google.com/file/d/1a1zLze6m8qX1TtGIMY_1-KHqCfHGW3cY/view?usp=sharing).
+[Final Report](https://drive.google.com/file/d/1a1zLze6m8qX1TtGIMY_1-KHqCfHGW3cY/view?usp=sharing)
 
 [Slides](https://docs.google.com/presentation/d/1PnNBXTVszvJFtj7o1RBMIZ2UhKqGL-cgOnwc5ihWLlE/edit?usp=sharing)
 
